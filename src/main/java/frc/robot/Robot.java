@@ -39,9 +39,6 @@ public class Robot extends TimedRobot {
     // autonomous chooser on the dashboard.
     RobotContainer.init();
 
-    // set targeting to ball
-    RobotContainer.ballTargeting.SettoBallTarget();
-
     // reset the gyro when robot powered up
     RobotContainer.gyro.resetGyro();
   }
@@ -92,10 +89,6 @@ public class Robot extends TimedRobot {
     // initialize robot subsystems    
     // RobotContainer.gyro.resetGyro(); // Todo: Removed as auto may start at variying angles
     RobotContainer.odometry.InitializefromShuffleboard();
-    
-    // set targeting to ball
-    RobotContainer.ballTargeting.SettoBallTarget();
-    RobotContainer.hubTargeting.SettoHubTarget();
 
     // robot is now initialized
     robotIsInitialized = true;
@@ -123,10 +116,6 @@ public class Robot extends TimedRobot {
       // robot is now initialized
       //robotIsInitialized = true;
     //}
-   
-   
-    RobotContainer.m_shooter.setShooterSpeed(0);
-    RobotContainer.m_shooter.setTopShooterSpeed(0);
 
     // This makes sure that the autonomous stops running when
     // teleop starts running. If you want the autonomous to
@@ -135,10 +124,6 @@ public class Robot extends TimedRobot {
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
     }
-
-    // set targeting to ball
-    RobotContainer.ballTargeting.SettoBallTarget();
-    RobotContainer.hubTargeting.SettoHubTarget();
 
   }
 

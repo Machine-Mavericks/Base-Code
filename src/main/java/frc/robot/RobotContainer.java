@@ -9,28 +9,13 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import frc.robot.commands.AimThenShoot;
-import frc.robot.commands.ClimbCommand;
-import frc.robot.commands.ClimbGroup;
+import frc.robot.commands.AutoDriveToPose;
 import frc.robot.commands.DriveCommand;
-import frc.robot.commands.IntakeCommand;
 import frc.robot.commands.LEDCommand;
-import frc.robot.commands.ReleaseBall;
-import frc.robot.commands.ShotEvaluationCommand;
-import frc.robot.commands.SteerTowardsBall;
-import frc.robot.commands.autonomous.AlternateFourBallCommand;
-import frc.robot.commands.autonomous.AnywhereTwoBallAuto;
-import frc.robot.commands.autonomous.FiveBallAuto;
-import frc.robot.subsystems.BallTargeting;
-import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Gyro;
-import frc.robot.subsystems.HubTargeting;
-import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LEDBlinkin;
-import frc.robot.subsystems.Lifter;
 import frc.robot.subsystems.PowerPanel;
-import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.SwerveOdometry;
 
 /**
@@ -53,12 +38,6 @@ public class RobotContainer {
   public static final SwerveOdometry odometry = new SwerveOdometry();
   public static final PowerPanel panel = new PowerPanel();
   public static final LEDBlinkin LEDStrip = new LEDBlinkin();
-  public static final Shooter m_shooter = new Shooter();
-  public static final Lifter lifter = new Lifter();
-  public static final Intake intake = new Intake();
-  public static final BallTargeting ballTargeting = new BallTargeting();
-  public static final HubTargeting hubTargeting = new HubTargeting();
-  public static final Climber climber = new Climber();
 
   /**
    * Initialise the container for the robot. Contains subsystems, OI devices, and
@@ -90,22 +69,9 @@ public class RobotContainer {
    */
   private static void configureButtonBindings() {
 
-    OI.shootButton.whileTrue(new AimThenShoot());
+    // example:
+    //OI.shootButton.whileTrue(new AimThenShoot());
 
-    // TODO: Disable binding for competition use
-    OI.zeroButton.whileTrue(new RunCommand(() -> gyro.resetGyro()));
-    OI.intakeButton.whileTrue(new IntakeCommand());
-    OI.ballTrackingButton.whileTrue(new SteerTowardsBall(false, 20.0));
-
-    OI.overshootButton.whileTrue(new ShotEvaluationCommand(ShotEvaluationCommand.ShotType.Overshoot));
-    OI.undershootButton.whileTrue(new ShotEvaluationCommand(ShotEvaluationCommand.ShotType.Undershoot));
-    OI.shothitButton.whileTrue(new ShotEvaluationCommand(ShotEvaluationCommand.ShotType.Hit));
-    OI.bounceoutButton.whileTrue(new ShotEvaluationCommand(ShotEvaluationCommand.ShotType.BouncedOut));
-    
-    OI.releaseBallButton.whileTrue(new ReleaseBall());
-
-    //OI.climbButton.whileTrue(new ClimbGroup());
-    //OI.manualClimbButton.whileTrue(new ClimbCommand());
  }
 
   /**
@@ -114,14 +80,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public static Command getAutonomousCommand() {
-    // An ExampleCommand will run in autonomous
-    if (RobotContainer.shuffleboard.m_selectedPath == 0)
-      return new AnywhereTwoBallAuto();
-    else if (RobotContainer.shuffleboard.m_selectedPath == 1)
-      return new FiveBallAuto();
-    else if (RobotContainer.shuffleboard.m_selectedPath == 2)
-      return new AlternateFourBallCommand();
-    else
-      return new AnywhereTwoBallAuto();
+   return new AutoDriveToPose(0, 0); //filler
   }
 }
