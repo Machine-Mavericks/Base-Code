@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.RobotContainer;
+import frc.robot.subsystems.Drivetrain;
 
 public class AutoDriveToPose extends Command {
   
@@ -94,9 +95,9 @@ public class AutoDriveToPose extends Command {
       rotSpeed = -m_rotspeed;
 
     // drive robot according to x,y,rot PID controller speeds
-    RobotContainer.drivetrain.drive(new Translation2d(xSpeed*RobotContainer.drivetrain.MAX_VELOCITY_METERS_PER_SECOND,
-                                                      ySpeed*RobotContainer.drivetrain.MAX_VELOCITY_METERS_PER_SECOND),
-                                    rotSpeed*RobotContainer.drivetrain.MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
+    RobotContainer.drivetrain.drive(new Translation2d(xSpeed*Drivetrain.MAX_VELOCITY_METERS_PER_SECOND,
+                                                      ySpeed*Drivetrain.MAX_VELOCITY_METERS_PER_SECOND),
+                                    rotSpeed*Drivetrain.MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
                                     true);
   }
 

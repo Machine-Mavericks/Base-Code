@@ -30,8 +30,6 @@ public class TurnRobot extends Command {
   double kd = 0.00125;
   PIDController pidController = new PIDController(kp, ki, kd);
 
-  private Drivetrain m_drivetrain = RobotContainer.drivetrain;
-
   /** Turn to/by angle
    * Input: angle - degrees (-180<angle<180)
    * relative - true if relative to current angle, false if absolute to field

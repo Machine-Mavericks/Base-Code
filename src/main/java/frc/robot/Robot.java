@@ -67,17 +67,15 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("X In", OI.driverController.getLeftX());
     SmartDashboard.putNumber("Y In", OI.driverController.getLeftY());
     
-    SmartDashboard.putBoolean("Button1", OI.driverController.getRawButton(1));
+    SmartDashboard.putBoolean("Button1", OI.driverController.getRawButton(1)); // is this important?
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
-  public void disabledInit() {
-  }
+  public void disabledInit() {}
 
   @Override
-  public void disabledPeriodic() {
-  }
+  public void disabledPeriodic() {}
 
   /**
    * This autonomous runs the autonomous command selected by your
@@ -101,15 +99,13 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during autonomous. */
   @Override
-  public void autonomousPeriodic() {
-  }
+  public void autonomousPeriodic() {}
 
   @Override
   public void teleopInit() {
    
     // if robot has not previously been initialized, then go ahead and initialize
     //if (robotIsInitialized == false) {
-      // TODO: Removed for competition
       // RobotContainer.gyro.resetGyro();
       // RobotContainer.odometry.InitializetoZero();
       
@@ -129,8 +125,7 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {
-  }
+  public void teleopPeriodic() {}
 
   @Override
   public void testInit() {

@@ -35,40 +35,15 @@ public class RobotMap {
         public static final int BR_STEER_FALCON = 8;
         /** CAN ID for front-left steer encoder */
         public static final int BR_STEER_ENCODER  = 10;
-        /** CAN ID for left lifter motor */
-        public static final int LIFTER_FALCON = 14;
-
-        /** CAN ID for right shooter motor */
-        public static final int RIGHT_SHOOTER_FALCON = 16;
-        /** CAN ID for left shooter motor */
-        public static final int LEFT_SHOOTER_FALCON = 17;
-        /** CAN ID for top shooter motor */
-        public static final int TOP_SHOOTER_FALCON = 20;
-        /** CAN ID for left climber motor */
-        public static final int CLIMBER_FALCON = 18;
-        
-        /** CAN ID for intake motor */
-        public static final int INTAKE_FALCON = 13;
     }
 
-    public static class VISION_TARGETING {
-    /** minimum area for finding ball */
-    public static final double MIN_BALL_DETECTION_AREA = 0.0;
-    /** minimum horizontal length of ball */
-    public static final double MIN_BALL_VERT_SIZE = 0.0;
-    }
-    
-    public static final int LIFTER_LIMIT_ID = 1;
-    public static final int INTAKE_LIMIT_ID = 2;
+    public static class VISION_TARGETING {} // is this important?
 
-    public static final double BALL_LIFTER_SPEED = -3161;
-
-    public static class PneumaticsChannel {
-    }
+    public static class PneumaticsChannel {}
 
     public static class PWMPorts {
         /** PWM Port for led strip */
-        public static final int LED_STRIP1 = 0;
+        public static final int LED_STRIP1 = 0;  // To be updated
         public static final int LED_BLINKIN = 3;
         public static final int CAMERA_SERVO_ID = 2;
         public static final int SHOOTER_SERVO_ID = 4;
@@ -97,6 +72,5 @@ public class RobotMap {
      * Function to initialise hardware
      * Should be called in {@link Robot#robotInit()}
      */
-    public static void Init() {
-    }
+    public static void Init() {}
 }

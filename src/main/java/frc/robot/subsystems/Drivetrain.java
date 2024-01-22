@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import java.util.Map;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.ClosedLoopOutputType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
@@ -26,7 +25,6 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
 import frc.robot.RobotMap;
-import frc.robot.subsystems.LEDBlinkin.LED_PATTERN;
 
 
 /**

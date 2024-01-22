@@ -4,11 +4,9 @@
 
 package frc.robot;
 
-import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.commands.AutoDriveToPose;
 import frc.robot.commands.DriveCommand;
 import frc.robot.commands.LEDCommand;
@@ -47,13 +45,8 @@ public class RobotContainer {
     drivetrain.setDefaultCommand(new DriveCommand(drivetrain));
     LEDStrip.setDefaultCommand(new LEDCommand());
 
-    CameraServer.	startAutomaticCapture(0);
-    CameraServer.	startAutomaticCapture(1);
-    CameraServer.	startAutomaticCapture(2);
-    CameraServer.	startAutomaticCapture(3);
-    CameraServer.	startAutomaticCapture(4);
-    CameraServer.	startAutomaticCapture(5);
-    CameraServer.	startAutomaticCapture(6);
+    // Camera Servers:
+    //CameraServer.	startAutomaticCapture(0);
 
     // Configure the button bindings
     configureButtonBindings();
@@ -80,6 +73,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public static Command getAutonomousCommand() {
-   return new AutoDriveToPose(0, 0); //filler
+   return new AutoDriveToPose(0, 0); //filler, replace with autonomous path
   }
 }
