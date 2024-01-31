@@ -35,6 +35,8 @@ public class RobotMap {
         public static final int BR_STEER_FALCON = 8;
         /** CAN ID for front-left steer encoder */
         public static final int BR_STEER_ENCODER  = 10;
+        /** CAN ID for CTR Pigeon Gyro */
+        public static final int PIGEON = 20;
     }
 
     public static class VISION_TARGETING {} // is this important?
