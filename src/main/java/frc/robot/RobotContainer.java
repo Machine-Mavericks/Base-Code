@@ -13,6 +13,7 @@ import frc.robot.commands.LEDCommand;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Gyro;
 import frc.robot.subsystems.LEDBlinkin;
+import frc.robot.subsystems.Pigeon;
 import frc.robot.subsystems.PowerPanel;
 import frc.robot.subsystems.SwerveOdometry;
 
@@ -33,7 +34,8 @@ public class RobotContainer {
   public static final ShuffleboardOI shuffleboard = new ShuffleboardOI();
 
   // The robot's subsystems are defined here...
-  public static final Gyro gyro = new Gyro();
+  //public static final Gyro gyro = new Gyro();
+  public static final Pigeon gyro = new Pigeon();
   public static final Drivetrain drivetrain = new Drivetrain();
   public static final SwerveOdometry odometry = new SwerveOdometry();
   public static final PowerPanel panel = new PowerPanel();
