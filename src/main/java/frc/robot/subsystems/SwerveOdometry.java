@@ -7,6 +7,7 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -18,15 +19,17 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
+import frc.robot.util.SubsystemShuffleboardManager;
+import frc.robot.util.ShuffleUser;
 
-public class SwerveOdometry extends SubsystemBase {
+public class SwerveOdometry extends SubsystemBase implements ShuffleUser {
 
   // constant to convert degrees to radians
   
   final float DEGtoRAD = (float) (3.1415926 / 180.0);
 
   // create swerve drive odometry object
-  private SwerveDriveOdometry m_odometry;
+  private SwerveDrivePoseEstimator m_odometry;
 
   // subsystem shuffleboard controls
   private GenericEntry m_robotX;
@@ -44,13 +47,15 @@ public class SwerveOdometry extends SubsystemBase {
     // create robot odometry - set to (0,0,0)(x,y,ang)
 
     // initialize swerve drive odometry
-    m_odometry = new SwerveDriveOdometry(RobotContainer.drivetrain.getKinematics(),
+    m_odometry = new SwerveDrivePoseEstimator(RobotContainer.drivetrain.getKinematics(),
         new Rotation2d(0.0),
         RobotContainer.drivetrain.getSwervePositions(),
         new Pose2d(0.0, 0.0, new Rotation2d(0.0)));
 
-    // create odometry shuffleboard page
-    initializeShuffleboard();
+    // // create odometry shuffleboard page
+    // initializeShuffleboard();
+
+    SubsystemShuffleboardManager.RegisterShuffleUser(this);
   }
 
   // -------------------- Initialize and Update Odometry Methods
@@ -83,17 +88,8 @@ public class SwerveOdometry extends SubsystemBase {
     m_odometry.resetPosition(new Rotation2d(gyroangle * DEGtoRAD), RobotContainer.drivetrain.getSwervePositions(), position);  // new Rotation2d(gyroangle * DEGtoRAD)
   }
 
-  public void setPositionHub(double dist) {
-    double theta = getAngle()-180;
-    double x = 8.23-dist*Math.cos(Math.toRadians(theta));
-    double y = 4.11-dist*Math.sin(Math.toRadians(theta));
-    setPosition(x,y,getAngle(),RobotContainer.gyro.getYaw());
-  }
-
-  /** Update current robot dometry - called by scheduler at 50Hz */
-  @Override
-  public void periodic() {
-
+  /* Called by the drivetrain synchronously with swerve module data updates to reduce latency */
+  public void updateOdometry(){
     // get gyro angle (in degrees) and make rotation vector
     Rotation2d gyroangle = new Rotation2d(RobotContainer.gyro.getYaw() * DEGtoRAD);
 
@@ -105,9 +101,6 @@ public class SwerveOdometry extends SubsystemBase {
       // update the robot's odometry
       m_odometry.update(gyroangle, positions);
     }
-    
-    // update odemetry shuffleboard page
-    updateShuffleboard();
   }
 
   // -------------------- Robot Current Odometry Access Methods --------------------
@@ -119,17 +112,17 @@ public class SwerveOdometry extends SubsystemBase {
 
   /** Return current odometry x displacement (in m) */
   public double getX() {
-    return m_odometry.getPoseMeters().getX();
+    return m_odometry.getEstimatedPosition().getX();
   }
 
   /** Return current odometry y displacement (in m) */
   public double getY() {
-    return m_odometry.getPoseMeters().getY();
+    return m_odometry.getEstimatedPosition().getY();
   }
 
   // return current odometry angle (in deg)
   public double getAngle() {
-    return m_odometry.getPoseMeters().getRotation().getDegrees();
+    return m_odometry.getEstimatedPosition().getRotation().getDegrees();
   }
 
 
@@ -163,7 +156,7 @@ public class SwerveOdometry extends SubsystemBase {
   // -------------------- Subsystem Shuffleboard Methods --------------------
 
   /** Initialize subsystem shuffleboard page and controls */
-  private void initializeShuffleboard() {
+  public void initializeShuffleboard() {
     // Create odometry page in shuffleboard
     ShuffleboardTab Tab = Shuffleboard.getTab("Odometry");
 
@@ -186,7 +179,7 @@ public class SwerveOdometry extends SubsystemBase {
   }
 
   /** Update subsystem shuffle board page with current odometry values */
-  private void updateShuffleboard() {
+  public void updateShuffleboard() {
     // write current robot odometry
     m_robotX.setDouble(getX());
     m_robotY.setDouble(getY());

@@ -26,6 +26,8 @@ import frc.robot.subsystems.SwerveOdometry;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
+  /** Update loop rate in Hz */
+  public static final double updateDt = 0.02;
 
   // Create robot's shuffboard operator interface
   public static final ShuffleboardOI shuffleboard = new ShuffleboardOI();
