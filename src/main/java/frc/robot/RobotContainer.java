@@ -11,7 +11,6 @@ import frc.robot.commands.AutoDriveToPose;
 import frc.robot.commands.DriveCommand;
 import frc.robot.commands.LEDCommand;
 import frc.robot.subsystems.Drivetrain;
-import frc.robot.subsystems.Gyro;
 import frc.robot.subsystems.LEDBlinkin;
 import frc.robot.subsystems.Pigeon;
 import frc.robot.subsystems.PowerPanel;
