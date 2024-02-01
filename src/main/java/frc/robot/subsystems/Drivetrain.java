@@ -421,6 +421,7 @@ public class Drivetrain extends SubsystemBase {
         SmartDashboard.putString("DrivePosSignalLatency", String.valueOf(m_swerveModules[0].getDriveMotor().getPosition().getTimestamp().getLatency())
             + " Non comp value: " + m_swerveModules[0].getDriveMotor().getPosition().getValueAsDouble());
         SmartDashboard.putString("SteerPosSignalLatency", String.valueOf(m_swerveModules[0].getSteerMotor().getPosition().getTimestamp().getLatency()));
+        SmartDashboard.putString("YawLatency", String.valueOf(RobotContainer.gyro.getYawLatency()));
 
         // TODO: OpenLoopVoltage seems to match SDS library best, but is open loop
         // For auto consistency we should aim for closed loop control

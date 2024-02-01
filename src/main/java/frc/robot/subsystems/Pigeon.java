@@ -71,6 +71,13 @@ public Pigeon() {
     gyro.reset();
   }
 
+    /**
+   * Gets signal latency for the gyro's yaw
+   */
+  public double getYawLatency(){
+    return gyro.getYaw().getTimestamp().getLatency();
+  }
+
 
   /** Accumulated yaw
    * @return accumulated angle in degrees */
