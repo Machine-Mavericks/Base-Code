@@ -15,22 +15,21 @@ import frc.robot.RobotMap;
 
 
 public class Pigeon extends SubsystemBase {
-  
-// subsystem shuffleboard controls
-private GenericEntry m_gyroPitch;
-private GenericEntry m_gyroYaw;
-private GenericEntry m_gyroRoll;
+  // subsystem shuffleboard controls
+  private GenericEntry m_gyroPitch;
+  private GenericEntry m_gyroYaw;
+  private GenericEntry m_gyroRoll;
 
-// make our gyro object
-private static Pigeon2 gyro;
+  // make our gyro object
+  private static Pigeon2 gyro;
 
-/** Creates a new Gyro. */
-public Pigeon() {
-  // initialize shuffleboard
-  initializeShuffleboard();
-  
-  // make pigeon object
-  gyro = new Pigeon2(RobotMap.CANID.PIGEON, "Drivebase");
+  /** Creates a new Gyro. */
+  public Pigeon() {
+    // initialize shuffleboard
+    initializeShuffleboard();
+    
+    // make pigeon object
+    gyro = new Pigeon2(RobotMap.CANID.PIGEON);
   }
 
   private int updateCounter=4;
@@ -59,7 +58,7 @@ public Pigeon() {
   }
 
   /** Gets the pitch of the robot
-   * @return current pitch value in deg */
+  * @return current pitch value in deg */
   public double getPitch() {
     
     return -gyro.getPitch().getValue();
@@ -113,4 +112,3 @@ public Pigeon() {
   }
 
 }
-
