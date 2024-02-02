@@ -59,7 +59,7 @@ public class Drivetrain extends SubsystemBase {
         /** The maximum amount of current the drive motors can apply without slippage */
         public static final double SlipCurrent = 400;
         /** Every 1 rotation of the azimuth results in CouplingRatio drive motor turns */
-        public static final double CouplingRatio = 3.5;
+        public static final double CouplingRatio = 0; // Resulted in rotation of about 0.1 pos, but since gear ratio is at play might mean more
         // TODO: Figure out actual PID values to use. These were stolen from 
         // https://github.com/CrossTheRoadElec/SwerveDriveExample/blob/main/src/main/java/frc/robot/Robot.java
 
@@ -251,9 +251,10 @@ public class Drivetrain extends SubsystemBase {
                 RobotMap.CANID.FL_STEER_FALCON, 
                 RobotMap.CANID.FL_DRIVE_FALCON, 
                 RobotMap.CANID.FL_STEER_ENCODER, 
-                21.79 / 360,  // -Math.toRadians(155 + 180)
+                -132.24 / 360,  // -Math.toRadians(155 + 180)
                 FRONT_LEFT_OFFSET.getX(),
-                FRONT_LEFT_OFFSET.getY()
+                FRONT_LEFT_OFFSET.getY(),
+                false
         );
         m_swerveModules[0] = new SwerveModule(frontLeftConstants, CAN_BUS_NAME);
 
@@ -262,9 +263,10 @@ public class Drivetrain extends SubsystemBase {
                 RobotMap.CANID.FR_STEER_FALCON, 
                 RobotMap.CANID.FR_DRIVE_FALCON, 
                 RobotMap.CANID.FR_STEER_ENCODER, 
-                -274.92 / 360, // Degrees converted to rotations
+                -64.13 / 360, // Degrees converted to rotations
                 FRONT_RIGHT_OFFSET.getX(),
-                FRONT_RIGHT_OFFSET.getY()
+                FRONT_RIGHT_OFFSET.getY(),
+                false
         );
         m_swerveModules[1] = new SwerveModule(frontRightConstants, CAN_BUS_NAME);
 
@@ -274,9 +276,10 @@ public class Drivetrain extends SubsystemBase {
                 RobotMap.CANID.BL_STEER_FALCON, 
                 RobotMap.CANID.BL_DRIVE_FALCON, 
                 RobotMap.CANID.BL_STEER_ENCODER, 
-                -17.22 / 360, 
+                -21.57 / 360, 
                 BACK_LEFT_OFFSET.getX(),
-                BACK_LEFT_OFFSET.getY()
+                BACK_LEFT_OFFSET.getY(),
+                false
         );
         m_swerveModules[2] = new SwerveModule(backLeftConstants, CAN_BUS_NAME);
 
@@ -286,9 +289,10 @@ public class Drivetrain extends SubsystemBase {
                 RobotMap.CANID.BR_STEER_FALCON, 
                 RobotMap.CANID.BR_DRIVE_FALCON, 
                 RobotMap.CANID.BR_STEER_ENCODER, 
-                47.9 / 360, 
+                68.79 / 360, 
                 BACK_RIGHT_OFFSET.getX(),
-                BACK_RIGHT_OFFSET.getY()
+                BACK_RIGHT_OFFSET.getY(),
+                false
         );
         m_swerveModules[3] = new SwerveModule(backRightConstants, CAN_BUS_NAME);
         
@@ -325,7 +329,8 @@ public class Drivetrain extends SubsystemBase {
         int cancoderId,
         double cancoderOffset,
         double locationX,
-        double locationY
+        double locationY,
+        boolean steerInverted
 
     ){
         SwerveModuleConstants constants = new SwerveModuleConstants()
@@ -344,7 +349,7 @@ public class Drivetrain extends SubsystemBase {
         .withSteerMotorClosedLoopOutput(FormattedSwerveModuleSettings.SteerClosedLoopOutput)
         .withDriveMotorClosedLoopOutput(FormattedSwerveModuleSettings.DriveClosedLoopOutput)
         .withSpeedAt12VoltsMps(FormattedSwerveModuleSettings.SpeedAt12VoltsMps)
-        .withSteerMotorInverted(FormattedSwerveModuleSettings.SteerMotorInverted)
+        .withSteerMotorInverted(steerInverted)
         .withDriveMotorInverted(FormattedSwerveModuleSettings.DriveMotorInverted)
         .withCouplingGearRatio(FormattedSwerveModuleSettings.CouplingRatio);
 
@@ -364,9 +369,9 @@ public class Drivetrain extends SubsystemBase {
         // 2024 - Elmo
         // flip sign of rotation speed
         // Allows easy flipping of drive axes if needed
-        Translation2d newtranslation = new Translation2d(translation.getX(),
-                translation.getY());
-        Double newrotation = -rotation;
+        Translation2d newtranslation = new Translation2d(-translation.getX(),
+                -translation.getY());
+        Double newrotation = rotation;
 
         // determine chassis speeds
         if (fieldOriented) {
@@ -413,15 +418,15 @@ public class Drivetrain extends SubsystemBase {
         SmartDashboard.putString("Processed Speeds", discretizedChassisSpeeds.toString());
 
         // Prepared debugging for closed loop drive motor
-        SmartDashboard.putString("FrontLeftState", m_swerveModules[0].getCurrentState().toString());
+        SmartDashboard.putString("FrontRightPos", m_swerveModules[1].getDriveMotor().getPosition().getValue().toString());
         //SmartDashboard.putString("FrontLeftDriveError", String.valueOf(m_swerveModules[0].getDriveMotor().getClosedLoopError().getValue()));
-        SmartDashboard.putString("FrontLeftDriveTarget", String.valueOf(m_swerveModules[0].getDriveMotor().getClosedLoopReference().getValue()));
-        SmartDashboard.putString("FrontLeftDriveCurrent", String.valueOf(m_swerveModules[0].getDriveMotor().getVelocity().getValue()));
-        SmartDashboard.putString("FrontLeftTargetState", m_swerveModules[0].getTargetState().toString());
-        SmartDashboard.putString("DrivePosSignalLatency", String.valueOf(m_swerveModules[0].getDriveMotor().getPosition().getTimestamp().getLatency())
-            + " Non comp value: " + m_swerveModules[0].getDriveMotor().getPosition().getValueAsDouble());
-        SmartDashboard.putString("SteerPosSignalLatency", String.valueOf(m_swerveModules[0].getSteerMotor().getPosition().getTimestamp().getLatency()));
-        SmartDashboard.putString("YawLatency", String.valueOf(RobotContainer.gyro.getYawLatency()));
+        // SmartDashboard.putString("FrontLeftDriveTarget", String.valueOf(m_swerveModules[0].getDriveMotor().getClosedLoopReference().getValue()));
+        // SmartDashboard.putString("FrontLeftDriveCurrent", String.valueOf(m_swerveModules[0].getDriveMotor().getVelocity().getValue()));
+        // SmartDashboard.putString("FrontLeftTargetState", m_swerveModules[0].getTargetState().toString());
+        // SmartDashboard.putString("DrivePosSignalLatency", String.valueOf(m_swerveModules[0].getDriveMotor().getPosition().getTimestamp().getLatency())
+        //     + " Non comp value: " + m_swerveModules[0].getDriveMotor().getPosition().getValueAsDouble());
+        // SmartDashboard.putString("SteerPosSignalLatency", String.valueOf(m_swerveModules[0].getSteerMotor().getPosition().getTimestamp().getLatency()));
+        // SmartDashboard.putString("YawLatency", String.valueOf(RobotContainer.gyro.getYawLatency()));
 
         // TODO: OpenLoopVoltage seems to match SDS library best, but is open loop
         // For auto consistency we should aim for closed loop control
@@ -438,7 +443,7 @@ public class Drivetrain extends SubsystemBase {
         var futureRobotPose = new Pose2d(
             speeds.vxMetersPerSecond * dt, 
             speeds.vyMetersPerSecond * dt, 
-            new Rotation2d(speeds.omegaRadiansPerSecond * dt * -rotationCompFactor) // No I do not know why it's negative
+            new Rotation2d(speeds.omegaRadiansPerSecond * dt * rotationCompFactor) // No I do not know why it's negative
         );
         var twist = Utils.log(futureRobotPose);
         // FLIPPED COORDINATE SYSTEM??

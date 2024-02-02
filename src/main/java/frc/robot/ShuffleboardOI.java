@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.data.BuildConstants;
 
 
 /** Contains shuffleboard setup for generic main page not belonging to any subsubsystem
@@ -68,7 +69,7 @@ public class ShuffleboardOI extends SubsystemBase {
     private void initializeMainShuffleboardPage() {
 
         // Create Main Tab in Shuffleboard
-        ShuffleboardTab tab = Shuffleboard.getTab("Auto");
+        ShuffleboardTab tab = Shuffleboard.getTab("Drive Setup");
         m_autonomousPath = new SendableChooser<Integer>();
 
         // add autonomous commands to page -
@@ -84,7 +85,15 @@ public class ShuffleboardOI extends SubsystemBase {
         tab.add("Preround Paths", m_autonomousPath).withWidget(BuiltInWidgets.kComboBoxChooser).withPosition(0, 0).withSize(2,1);
         m_delayTime = tab.add("Auto Delay Time", 0).withWidget(BuiltInWidgets.kNumberSlider).withPosition(0, 1).withSize(1, 1).withProperties(Map.of("min", 0, "max", 10)).getEntry();
 
-              
+        // Uses auto generated constants to put git info on dashboard
+        // Only updated once at the beginning
+        ShuffleboardLayout BuildInfoLayout = tab.getLayout("Build Info", BuiltInLayouts.kList);
+        BuildInfoLayout.withPosition(6, 0);
+        BuildInfoLayout.withSize(1, 3);
+        BuildInfoLayout.add("Deployed Branch", BuildConstants.GIT_BRANCH);
+        BuildInfoLayout.add("Build Timestamp", BuildConstants.BUILD_DATE);
+        BuildInfoLayout.add("Repository", BuildConstants.MAVEN_NAME);      
+
         // add match time remaining in autonomous/teleop part of match (seconds)
         ShuffleboardLayout l1 = tab.getLayout("Timer", BuiltInLayouts.kList);
         l1.withPosition(0, 2);
