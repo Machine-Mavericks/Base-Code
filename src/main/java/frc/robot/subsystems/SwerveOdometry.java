@@ -21,6 +21,7 @@ import frc.robot.RobotContainer;
 import frc.robot.util.SubsystemShuffleboardManager;
 import frc.robot.util.ShuffleUser;
 
+//TODO: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/state-space/state-space-pose-estimators.html
 public class SwerveOdometry extends SubsystemBase implements ShuffleUser {
 
   // constant to convert degrees to radians
@@ -54,7 +55,7 @@ public class SwerveOdometry extends SubsystemBase implements ShuffleUser {
     // // create odometry shuffleboard page
     // initializeShuffleboard();
 
-    SubsystemShuffleboardManager.RegisterShuffleUser(this);
+    SubsystemShuffleboardManager.RegisterShuffleUser(this, false, 9);
   }
 
   // -------------------- Initialize and Update Odometry Methods
