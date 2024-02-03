@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.commands.AutoDriveToPose;
 import frc.robot.commands.DriveCommand;
 import frc.robot.commands.LEDCommand;
@@ -64,11 +65,8 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private static void configureButtonBindings() {
-
-    // example:
-    //OI.shootButton.whileTrue(new AimThenShoot());
-
- }
+    OI.zeroButton.whileTrue(new RunCommand(() -> gyro.resetGyro()));
+  }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
