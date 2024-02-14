@@ -36,6 +36,8 @@ import frc.robot.util.Utils;
 // [X] Investigate CAN signal latency, as well as possible erroneous lack of compensation in the gyro
 // [X] Get a constants folder
 // [-] Un break / tune closed loop driving
+// [-] Investigate pathplanner
+// [-] Invest
 
 /**
  * Subsystem representing the swerve drivetrain
@@ -194,7 +196,7 @@ public class Drivetrain extends SubsystemBase {
     public final double ODOMETRY_HZ;  
     public final boolean USING_CAN_FD;
 
-    // Shuffleboard classes
+    // Shuffleboard objects
     private ShuffleboardTab tab;
     // value controlled on shuffleboard to stop the jerkiness of the robot by limiting its acceleration
     public GenericEntry maxAccel;
@@ -313,6 +315,7 @@ public class Drivetrain extends SubsystemBase {
         BaseStatusSignal.setUpdateFrequencyForAll(ODOMETRY_HZ, m_allSignals);
     }
 
+    // To be replaced with custom SwerveModule class later, works fine for now
     private void AddModuleSignals(SwerveModule module, int index){
         var signals = PhoenixUnsafeAccess.getSwerveSignals(module); // Dirty hack
         m_allSignals[(index * 4) + 0] = signals[0];
