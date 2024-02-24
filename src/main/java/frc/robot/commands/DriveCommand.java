@@ -9,7 +9,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.OI;
 import frc.robot.RobotContainer;
-import frc.robot.Utils;
+import frc.robot.util.Utils;
 import frc.robot.subsystems.Drivetrain;
 
 public class DriveCommand extends Command {
@@ -68,7 +68,7 @@ public class DriveCommand extends Command {
       m_pidDelay = 10; 
     }
 
-    m_drivetrain.drive(new Translation2d(-yInput*Drivetrain.MAX_VELOCITY_METERS_PER_SECOND, xInput*Drivetrain.MAX_VELOCITY_METERS_PER_SECOND), rotInput*Drivetrain.MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND, true); 
+    m_drivetrain.drive(new Translation2d(yInput*Drivetrain.MAX_VELOCITY_METERS_PER_SECOND, xInput*Drivetrain.MAX_VELOCITY_METERS_PER_SECOND), rotInput*Drivetrain.MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND, true); 
   }
 
   // Called once the command ends or is interrupted.

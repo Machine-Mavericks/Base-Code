@@ -3,107 +3,93 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot.subsystems;
-
-// libraries needed for NavX
-import com.kauailabs.navx.frc.AHRS;
-
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.wpilibj.SerialPort.Port;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.ctre.phoenix6.hardware.Pigeon2;
 
-public class Gyro extends SubsystemBase {
+import frc.robot.RobotMap;
+
+
+public class Pigeon extends SubsystemBase {
   // subsystem shuffleboard controls
   private GenericEntry m_gyroPitch;
   private GenericEntry m_gyroYaw;
   private GenericEntry m_gyroRoll;
-  private GenericEntry m_xAcceleration;
-  private GenericEntry m_yAcceleration;
-  
+
   // make our gyro object
-  private AHRS gyro;
+  private static Pigeon2 gyro;
 
   /** Creates a new Gyro. */
-  public Gyro() {
-    //gyro = new AHRS(Port.kMXP);
-    gyro = new AHRS(Port.kMXP);
-    gyro.reset();
+  public Pigeon() {
+    // initialize shuffleboard
     initializeShuffleboard();
+    
+    // make pigeon object
+    gyro = new Pigeon2(RobotMap.CANID.PIGEON);
   }
 
+  private int updateCounter=4;
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
-    updateShuffleboard();
+    // update shuffle board values - update at reduced 5Hz rate to save CPU cycles
+    updateCounter+=1;
+    if (updateCounter>=20)
+    { updateCounter=0; updateShuffleboard(); }
+    else if (updateCounter<0)
+      updateCounter=0;
   }
 
-  /**
-   * Gets the yaw of the robot
-   * 
-   * @return current yaw value (-180 to 180)
-   */
+  /** Gets the yaw of the robot
+   * @return current yaw value (-180 to 180) */
   public double getYaw() {
-    // Flip angle since gyro is mounted upside down
-    return gyro.getYaw();  
-  }
-
-  /**
-   * Gets the pitch of the robot
-   * 
-   * @return current pitch value (-180 to 180)
-   */
-  public double getPitch() {
-    return gyro.getPitch();
-  }
-
-  /**
-   * Resets yaw to zero
-   */
-  public void resetGyro() {
     
+    // scaling factor for CTR Pigeon determine by test - Feb 5 2023
+    double value = gyro.getYaw().getValue()*0.99895833;
+    
+    // convert continous number to -180 to +180deg to match NavX function call
+    if (value > 0)
+      return ((value+180.0) %360.0)-180.0;
+    else
+      return ((value-180.0) %360.0)+180.0;
+  }
+
+  /** Gets the pitch of the robot
+  * @return current pitch value in deg */
+  public double getPitch() {
+    
+    return -gyro.getPitch().getValue();
+  }
+
+  /** Resets yaw to zero */
+  public void resetGyro() {
     // reset our Gyro
     gyro.reset();
   }
 
-
-  /**
-   * Accumulated yaw
-   * 
-   * @return accumulated angle in degrees
+    /**
+   * Gets signal latency for the gyro's yaw
    */
+  public double getYawLatency(){
+    return gyro.getYaw().getTimestamp().getLatency();
+  }
+
+
+  /** Accumulated yaw
+   * @return accumulated angle in degrees */
   public double continuousYaw() {
     return gyro.getAngle();
   }
 
-  /** 
-   * Get Roll
-   * 
-   * @return -180 to 180 degrees
-   */
+  /** Get Roll
+   * @return roll in deg */
   public double getRoll() {
-    return gyro.getRoll();
+    return gyro.getRoll().getValue();
   }
 
-  /**
-   * X Acceleration
-   * 
-   * @return ratio of gravity
-   */
-  public double getXAcceleration() {
-    return gyro.getRawAccelX();
-  }
-
-  /**
-   * Y Acceleration
-   * 
-   * @return ratio of gravity
-   */
-  public double getYAcceleration() {
-    return gyro.getRawAccelY();
-  }
 
   /** Gyro Shuffleboard */
 
@@ -112,17 +98,16 @@ public class Gyro extends SubsystemBase {
   /** Initialize subsystem shuffleboard page and controls */
   private void initializeShuffleboard() {
     // Create odometry page in shuffleboard
-    ShuffleboardTab Tab = Shuffleboard.getTab("Gyroscope");
+    ShuffleboardTab Tab = Shuffleboard.getTab("Pigeon");
 
     // create controls to display robot position, angle, and gyro angle
-    ShuffleboardLayout l1 = Tab.getLayout("Gyroscope", BuiltInLayouts.kList);
+    ShuffleboardLayout l1 = Tab.getLayout("Values", BuiltInLayouts.kList);
     l1.withPosition(0, 0);
-    l1.withSize(1, 4);
+    l1.withSize(1, 3);
     m_gyroPitch = l1.add("Pitch (deg)", 0.0).getEntry();
     m_gyroYaw = l1.add("Yaw (deg)", 0.0).getEntry();
     m_gyroRoll = l1.add("Roll (deg)", 0.0).getEntry();
-    m_xAcceleration = l1.add("X Acceleration", 0.0).getEntry();
-    m_yAcceleration = l1.add("Y Acceleration", 0.0).getEntry();
+    
   }
 
   /** Update subsystem shuffle board page with current Gyro values */
@@ -131,7 +116,6 @@ public class Gyro extends SubsystemBase {
     m_gyroPitch.setDouble(getPitch());
     m_gyroYaw.setDouble(getYaw());
     m_gyroRoll.setDouble(getRoll());
-    m_xAcceleration.setDouble(getXAcceleration());
-    m_yAcceleration.setDouble(getYAcceleration());
   }
+
 }

@@ -14,27 +14,29 @@ public class RobotMap {
         /** CAN ID for front-left drive falcon */
         public static final int FL_DRIVE_FALCON = 3;
         /** CAN ID for front-left steer falcon */
-        public static final int FL_STEER_FALCON = 4;
+        public static final int FL_STEER_FALCON = 2;
         /** CAN ID for front-left steer encoder */
-        public static final int FL_STEER_ENCODER = 12;
+        public static final int FL_STEER_ENCODER = 10;
         /** CAN ID for front-right drive falcon */
         public static final int FR_DRIVE_FALCON = 5;
         /** CAN ID for front-right steer falcon */
-        public static final int FR_STEER_FALCON = 6;
+        public static final int FR_STEER_FALCON = 4;
         /** CAN ID for front-left steer encoder */
         public static final int FR_STEER_ENCODER = 11;
         /** CAN ID for back-left drive falcon */
-        public static final int BL_DRIVE_FALCON = 1;
+        public static final int BL_DRIVE_FALCON = 7;
         /** CAN ID for back-left steer falcon */
-        public static final int BL_STEER_FALCON = 2;
+        public static final int BL_STEER_FALCON = 6;
         /** CAN ID for front-left steer encoder */
-        public static final int BL_STEER_ENCODER = 9;
+        public static final int BL_STEER_ENCODER = 12;
         /** CAN ID for back-right drive falcon */
-        public static final int BR_DRIVE_FALCON = 7;
+        public static final int BR_DRIVE_FALCON = 9;
         /** CAN ID for back-right steer falcon */
         public static final int BR_STEER_FALCON = 8;
         /** CAN ID for front-left steer encoder */
-        public static final int BR_STEER_ENCODER  = 10;
+        public static final int BR_STEER_ENCODER  = 13;
+        /** CAN ID for CTR Pigeon Gyro */
+        public static final int PIGEON = 14;
     }
 
     public static class VISION_TARGETING {} // is this important?

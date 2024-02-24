@@ -2,13 +2,17 @@ package frc.robot.subsystems;
 
 import java.util.Map;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.mechanisms.swerve.PhoenixUnsafeAccess;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.ClosedLoopOutputType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -25,18 +29,28 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
 import frc.robot.RobotMap;
+import frc.robot.util.Utils;
 
+// TODO LIST:
+// [X] Tune coupling ratio as described here https://pro.docs.ctr-electronics.com/en/stable/docs/api-reference/mechanisms/swerve/swerve-builder-api.html
+// [X] Investigate CAN signal latency, as well as possible erroneous lack of compensation in the gyro
+// [X] Get a constants folder
+// [-] Un break / tune closed loop driving
+// [-] Investigate pathplanner
+// [-] Invest
 
 /**
  * Subsystem representing the swerve drivetrain
  */
 public class Drivetrain extends SubsystemBase {
+    
+    
     //Useful reference: https://pro.docs.ctr-electronics.com/en/latest/docs/api-reference/mechanisms/swerve/swerve-builder-api.html
-
+    
     // Helper class to ensure all constants are formatted correctly for Pheonix 6 swerve library
     // Values are set based on old constants from the SDS library
     // https://github.com/CrossTheRoadElec/SwerveDriveExample/blob/main/src/main/java/frc/robot/CTRSwerve/SwerveDriveConstantsCreator.java
-    public class SwerveModuleSettings {
+    public class FormattedSwerveModuleSettings {
         /** Gear ratio between drive motor and wheel. Drive reduction constants taken from the original SDS library. 
          * Reciprocal is taken to get expected format for number in pheonix library, for a better explaination, read the source code for SwerveModuleConstants*/
         public static final double DriveMotorGearRatio = 1 / MK4_L1_DriveReduction; 
@@ -46,20 +60,19 @@ public class Drivetrain extends SubsystemBase {
         public static final double WheelDiameter = Units.metersToInches(MK4_L1_WheelDiameter);
         /** The maximum amount of current the drive motors can apply without slippage */
         public static final double SlipCurrent = 400;
-
-
+        /** Every 1 rotation of the azimuth results in CouplingRatio drive motor turns */
+        public static final double CouplingRatio = 0; // Resulted in rotation of about 0.1 pos, but since gear ratio is at play might mean more
         // TODO: Figure out actual PID values to use. These were stolen from 
         // https://github.com/CrossTheRoadElec/SwerveDriveExample/blob/main/src/main/java/frc/robot/Robot.java
 
         /** The steer motor gains */
         private static final Slot0Configs SteerMotorGains = new Slot0Configs()
-        .withKP(100).withKI(0).withKD(0.05)
-        .withKS(0).withKV(1.5).withKA(0);
+        .withKP(20).withKI(0).withKD(0.05)
+        .withKS(0).withKV(1).withKA(0);
         /** The drive motor gains */
         public static final Slot0Configs DriveMotorGains = new Slot0Configs()
-        .withKP(3).withKI(0).withKD(0)
-        .withKS(0).withKV(0).withKA(0);;
-
+        .withKP(0.1).withKI(0).withKD(0) // TODO: Tune this value
+        .withKV(0.11);
 
 
         /** Only option is Voltage without pro liscence */ 
@@ -69,7 +82,7 @@ public class Drivetrain extends SubsystemBase {
 
         public static final double SpeedAt12VoltsMps = MAX_VELOCITY_METERS_PER_SECOND; 
 
-        /** True if the steering motor is reversed from the CANcoder */
+        /** True if the driving motor is reversed */
         public static final boolean DriveMotorInverted = MK4_L1_DriveInverted;
 
 
@@ -77,45 +90,31 @@ public class Drivetrain extends SubsystemBase {
         public static final boolean SteerMotorInverted = MK4_L1_SteerInverted;
     }
 
-    
-
-            
-    // value controlled on shuffleboard to stop the jerkiness of the robot by limiting its acceleration
-    public GenericEntry maxAccel;
-    public GenericEntry speedLimitFactor;
 
     public static final String CAN_BUS_NAME = "rio"; // If the drivetrain runs CANivore, change to name of desired CAN loop
-
+    public static final int MODULE_COUNT = 4;
     /**
      * The left-to-right distance between the drivetrain wheels
-     *
      * Should be measured from center to center.
      */
     public static final double TRACKWIDTH_METERS = 0.6;
     /**
      * The front-to-back distance between the drivetrain wheels.
-     *
      * Should be measured from center to center.
      */
     public static final double WHEELBASE_METERS = 0.6;
 
     /**
      * The maximum voltage that will be delivered to the drive motors.
-     * <p>
      * This can be reduced to cap the robot's maximum speed. Typically, this is
      * useful during initial testing of the robot.
      */
     public static final double MAX_VOLTAGE = 12.0;
 
-
-
-    // Front left
+    // Swerve module physical positions
     public static final Translation2d FRONT_LEFT_OFFSET = new Translation2d(TRACKWIDTH_METERS / 2.0, WHEELBASE_METERS / 2.0);
-    // Front right
     public static final Translation2d FRONT_RIGHT_OFFSET = new Translation2d(TRACKWIDTH_METERS / 2.0, -WHEELBASE_METERS / 2.0);
-    // Back left
     public static final Translation2d BACK_LEFT_OFFSET = new Translation2d(-TRACKWIDTH_METERS / 2.0, WHEELBASE_METERS / 2.0);
-    // Back right
     public static final Translation2d BACK_RIGHT_OFFSET = new Translation2d(-TRACKWIDTH_METERS / 2.0, -WHEELBASE_METERS / 2.0);
 
 
@@ -126,8 +125,9 @@ public class Drivetrain extends SubsystemBase {
     public static final double MK4_L1_WheelDiameter = 0.10033;
 
     public static final boolean MK4_L1_DriveInverted = true;
-    public static final boolean MK4_L1_SteerInverted = true;
-     
+    public static final boolean MK4_L1_SteerInverted = false;
+    
+    public static final double DRIVE_DEADBAND_PERCENT = 0.0;
 
     // The formula for calculating the theoretical maximum velocity is:
     // <Motor free speed RPM> / 60 * <Drive reduction> * <Wheel diameter meters> *
@@ -139,7 +139,6 @@ public class Drivetrain extends SubsystemBase {
     // SdsModuleConfigurations.MK4_L2.getWheelDiameter() * Math.PI
     /**
      * The maximum velocity of the robot in meters per second.
-     * <p>
      * This is a measure of how fast the robot should be able to drive in a straight
      * line.
      */
@@ -149,7 +148,6 @@ public class Drivetrain extends SubsystemBase {
 
     /**
      * The maximum angular velocity of the robot in radians per second.
-     * <p>
      * This is a measure of how fast the robot can rotate in place.
      */
     // Here we calculate the theoretical maximum angular velocity. You can also
@@ -157,30 +155,54 @@ public class Drivetrain extends SubsystemBase {
     public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = MAX_VELOCITY_METERS_PER_SECOND /
             Math.hypot(TRACKWIDTH_METERS / 2.0, WHEELBASE_METERS / 2.0);
 
-    /**
-     * The model representing the drivetrain's kinematics
+
+
+    // Whether motors should try to brake
+    public static final NeutralModeValue NEUTRAL_MODE = NeutralModeValue.Brake;
+
+    // -------------------- Swerve Module Data Arrays --------------------
+    
+    /*
+     * Swerve module data is ordered as follows
+     * FrontLeft
+     * FrontRight
+     * BackLeft
+     * BackRight
      */
+    // Current swerve module states - contains speed(m/s) and angle for each swerve module
+    SwerveModuleState[] m_states;
+    // Current swerve module states - contains speed(m/s) and angle for each swerve module
+    SwerveModuleState[] m_targetStates;
+    // Current swerve module positions - contains number of meters wheel has rotated as well as module angle
+    SwerveModulePosition[] m_positions;
+    // Odometry signals
+    BaseStatusSignal[] m_allSignals;
+    // The swerve modules themselves
+    private SwerveModule[] m_swerveModules;
+
+
+    // The model representing the drivetrain's kinematics
     private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
         FRONT_LEFT_OFFSET,
         FRONT_RIGHT_OFFSET,
         BACK_LEFT_OFFSET,
         BACK_RIGHT_OFFSET
     );
-            
-
-    // These are our modules. We set them in the constructor.
-    private SwerveModule m_frontLeftModule;
-    private SwerveModule m_frontRightModule;
-    private SwerveModule m_backLeftModule;
-    private SwerveModule m_backRightModule;
-
+    
+    // Target chassisSpeeds (robot relative)
     private ChassisSpeeds m_chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
 
+    // Odometry settings configured in constructor
+    public final double ODOMETRY_HZ;  
+    public final boolean USING_CAN_FD;
+
+    // Shuffleboard objects
     private ShuffleboardTab tab;
+    // value controlled on shuffleboard to stop the jerkiness of the robot by limiting its acceleration
+    public GenericEntry maxAccel;
+    public GenericEntry speedLimitFactor;
 
-    // Swerve module states - contains speed(m/s) and angle for each swerve module
-    SwerveModuleState[] m_states;
-
+    
     /**
      * Create a new swerve drivetrain
      * 
@@ -191,15 +213,14 @@ public class Drivetrain extends SubsystemBase {
      * @param navx             Pigeon IMU
      */
     public Drivetrain() {
-        // SmartDashboard.putData("Field", m_field);
+        USING_CAN_FD = CANBus.isNetworkFD(CAN_BUS_NAME);
+        ODOMETRY_HZ = USING_CAN_FD ? 250 : 100;
 
         tab = Shuffleboard.getTab("Drivetrain");
 
+        resetModules(NEUTRAL_MODE);
 
-        //TODO REST TO BRAKE
-        resetModules(NeutralModeValue.Coast);
-
-                /**Acceleration Limiting Slider*/
+        /**Acceleration Limiting Slider*/
         maxAccel = tab.addPersistent("Max Acceleration", 0.05)
         .withPosition(8, 0)
         .withWidget(BuiltInWidgets.kNumberSlider)
@@ -210,41 +231,46 @@ public class Drivetrain extends SubsystemBase {
         .withWidget(BuiltInWidgets.kNumberSlider)
         .withProperties(Map.of("min", 0, "max", 0.75))
         .getEntry();
-        tab.add("Reset Drivetrain", new InstantCommand(()->{resetModules(NeutralModeValue.Coast);}))
+        tab.add("Reset Drivetrain", new InstantCommand(()->{resetModules(NEUTRAL_MODE);}))
         .withPosition(0,0)
         .withSize(2, 1);
-
     }
 
     // Note: WPI's coordinate system is X forward, Y to the left so make sure all locations are with
     private void resetModules(NeutralModeValue nm) {
-        //final Mk4SwerveModuleHelper.GearRatio DRIVE_RATIO = Mk4SwerveModuleHelper.GearRatio.L1;
+        System.out.println("Resetting swerve modules");
 
+        // Init all arrays
+        m_swerveModules = new SwerveModule[MODULE_COUNT];
+        m_positions = new SwerveModulePosition[MODULE_COUNT];
+        m_states = new SwerveModuleState[MODULE_COUNT];
+        m_targetStates = new SwerveModuleState[MODULE_COUNT];
+
+        m_allSignals = new BaseStatusSignal[MODULE_COUNT * 4];
+        
         // Init Front Left Module
         SwerveModuleConstants frontLeftConstants = CreateSwerveModuleConstants(
                 RobotMap.CANID.FL_STEER_FALCON, 
                 RobotMap.CANID.FL_DRIVE_FALCON, 
                 RobotMap.CANID.FL_STEER_ENCODER, 
-                -Math.toRadians(155 + 180), 
+                -132.24 / 360,  // -Math.toRadians(155 + 180)
                 FRONT_LEFT_OFFSET.getX(),
-                FRONT_LEFT_OFFSET.getY()
+                FRONT_LEFT_OFFSET.getY(),
+                false
         );
-        m_frontLeftModule = new SwerveModule(frontLeftConstants, CAN_BUS_NAME);
-        m_frontLeftModule.configNeutralMode(nm);
-        m_frontLeftModule.getPosition(true); // Appears to refresh internal position used for optimization
+        m_swerveModules[0] = new SwerveModule(frontLeftConstants, CAN_BUS_NAME);
 
         // Init Front Right Module
         SwerveModuleConstants frontRightConstants = CreateSwerveModuleConstants(
                 RobotMap.CANID.FR_STEER_FALCON, 
                 RobotMap.CANID.FR_DRIVE_FALCON, 
                 RobotMap.CANID.FR_STEER_ENCODER, 
-                -Math.toRadians(94 + 180), 
+                -64.13 / 360, // Degrees converted to rotations
                 FRONT_RIGHT_OFFSET.getX(),
-                FRONT_RIGHT_OFFSET.getY()
+                FRONT_RIGHT_OFFSET.getY(),
+                false
         );
-        m_frontRightModule = new SwerveModule(frontRightConstants, CAN_BUS_NAME);
-        m_frontRightModule.configNeutralMode(nm);
-        m_frontRightModule.getPosition(true); // Appears to refresh internal position used for optimization
+        m_swerveModules[1] = new SwerveModule(frontRightConstants, CAN_BUS_NAME);
 
 
         // Init Back Left Module
@@ -252,13 +278,12 @@ public class Drivetrain extends SubsystemBase {
                 RobotMap.CANID.BL_STEER_FALCON, 
                 RobotMap.CANID.BL_DRIVE_FALCON, 
                 RobotMap.CANID.BL_STEER_ENCODER, 
-                -Math.toRadians(200 + 180), 
+                -21.57 / 360, 
                 BACK_LEFT_OFFSET.getX(),
-                BACK_LEFT_OFFSET.getY()
+                BACK_LEFT_OFFSET.getY(),
+                false
         );
-        m_backLeftModule = new SwerveModule(backLeftConstants, CAN_BUS_NAME);
-        m_backLeftModule.configNeutralMode(nm);
-        m_backLeftModule.getPosition(true); // Appears to refresh internal position used for optimization
+        m_swerveModules[2] = new SwerveModule(backLeftConstants, CAN_BUS_NAME);
 
 
         // Init Back Right Module
@@ -266,23 +291,49 @@ public class Drivetrain extends SubsystemBase {
                 RobotMap.CANID.BR_STEER_FALCON, 
                 RobotMap.CANID.BR_DRIVE_FALCON, 
                 RobotMap.CANID.BR_STEER_ENCODER, 
-                -Math.toRadians(135 + 180), 
+                68.79 / 360, 
                 BACK_RIGHT_OFFSET.getX(),
-                BACK_RIGHT_OFFSET.getY()
+                BACK_RIGHT_OFFSET.getY(),
+                false
         );
-        m_backRightModule = new SwerveModule(backRightConstants, CAN_BUS_NAME);
-        m_backRightModule.configNeutralMode(nm);
-        m_backRightModule.getPosition(true); // Appears to refresh internal position used for optimization
+        m_swerveModules[3] = new SwerveModule(backRightConstants, CAN_BUS_NAME);
+        
+
+        // Perform initial configuration on all swerve modules
+        for (int i = 0; i < m_swerveModules.length; i++){
+            SwerveModule module = m_swerveModules[i];
+
+            module.configNeutralMode(nm);
+            AddModuleSignals(module, i);
+            m_positions[i] = m_swerveModules[i].getPosition(true); // Appears to refresh internal position used for optimization
+            m_states[i] = new SwerveModuleState(); // Initialize to blank states at the beginning, will be overwritten in first periodic loop
+            m_targetStates[i] = new SwerveModuleState();
+        }
+
+
+        /* Make sure all signals update at the correct update frequency */
+        BaseStatusSignal.setUpdateFrequencyForAll(ODOMETRY_HZ, m_allSignals);
     }
 
-    // It seems there is already a factory for SwerveModuleConstants
+    // To be replaced with custom SwerveModule class later, works fine for now
+    private void AddModuleSignals(SwerveModule module, int index){
+        var signals = PhoenixUnsafeAccess.getSwerveSignals(module); // Dirty hack
+        m_allSignals[(index * 4) + 0] = signals[0];
+        m_allSignals[(index * 4) + 1] = signals[1];
+        m_allSignals[(index * 4) + 2] = signals[2];
+        m_allSignals[(index * 4) + 3] = signals[3];
+    }
+
+    
+    // It seems there was already a factory for SwerveModuleConstants. Oh well!
     public static SwerveModuleConstants CreateSwerveModuleConstants(
         int steerId,
         int driveId,
         int cancoderId,
         double cancoderOffset,
         double locationX,
-        double locationY
+        double locationY,
+        boolean steerInverted
 
     ){
         SwerveModuleConstants constants = new SwerveModuleConstants()
@@ -292,17 +343,18 @@ public class Drivetrain extends SubsystemBase {
         .withCANcoderOffset(cancoderOffset)
         .withLocationX(locationX)
         .withLocationY(locationY)
-        .withDriveMotorGearRatio(SwerveModuleSettings.DriveMotorGearRatio)
-        .withSteerMotorGearRatio(SwerveModuleSettings.SteerMotorGearRatio)
-        .withWheelRadius(SwerveModuleSettings.WheelDiameter / 2)
-        .withSlipCurrent(SwerveModuleSettings.SlipCurrent)
-        .withSteerMotorGains(SwerveModuleSettings.SteerMotorGains)
-        .withDriveMotorGains(SwerveModuleSettings.DriveMotorGains)
-        .withSteerMotorClosedLoopOutput(SwerveModuleSettings.SteerClosedLoopOutput)
-        .withDriveMotorClosedLoopOutput(SwerveModuleSettings.DriveClosedLoopOutput)
-        .withSpeedAt12VoltsMps(SwerveModuleSettings.SpeedAt12VoltsMps)
-        .withSteerMotorInverted(SwerveModuleSettings.SteerMotorInverted)
-        .withDriveMotorInverted(SwerveModuleSettings.DriveMotorInverted);
+        .withDriveMotorGearRatio(FormattedSwerveModuleSettings.DriveMotorGearRatio)
+        .withSteerMotorGearRatio(FormattedSwerveModuleSettings.SteerMotorGearRatio)
+        .withWheelRadius(FormattedSwerveModuleSettings.WheelDiameter / 2)
+        .withSlipCurrent(FormattedSwerveModuleSettings.SlipCurrent)
+        .withSteerMotorGains(FormattedSwerveModuleSettings.SteerMotorGains)
+        .withDriveMotorGains(FormattedSwerveModuleSettings.DriveMotorGains)
+        .withSteerMotorClosedLoopOutput(FormattedSwerveModuleSettings.SteerClosedLoopOutput)
+        .withDriveMotorClosedLoopOutput(FormattedSwerveModuleSettings.DriveClosedLoopOutput)
+        .withSpeedAt12VoltsMps(FormattedSwerveModuleSettings.SpeedAt12VoltsMps)
+        .withSteerMotorInverted(steerInverted)
+        .withDriveMotorInverted(FormattedSwerveModuleSettings.DriveMotorInverted)
+        .withCouplingGearRatio(FormattedSwerveModuleSettings.CouplingRatio);
 
         return constants;
     }
@@ -317,15 +369,12 @@ public class Drivetrain extends SubsystemBase {
     public void drive(Translation2d translation, double rotation, boolean fieldOriented) {
 
         // correct axes of drive - determined from field testing
-        // Feb 10 2022
-        // flip sign of y axis speed
+        // 2024 - Elmo
         // flip sign of rotation speed
-        Translation2d newtranslation = new Translation2d(translation.getX(),
+        // Allows easy flipping of drive axes if needed
+        Translation2d newtranslation = new Translation2d(-translation.getX(),
                 -translation.getY());
-        Double newrotation = -rotation;
-
-        // not sure what this line was intended to do. KN Feb 11/2022
-        // rotation *= 2.0 / Math.hypot(WHEELBASE_METERS, TRACKWIDTH_METERS);
+        Double newrotation = rotation;
 
         // determine chassis speeds
         if (fieldOriented) {
@@ -342,26 +391,45 @@ public class Drivetrain extends SubsystemBase {
 
     @Override
     public void periodic() {
-        m_frontLeftModule.getPosition(true);
-        m_frontRightModule.getPosition(true);
-        m_backLeftModule.getPosition(true);
-        m_backRightModule.getPosition(true);
+        // Ensure sensor readings & pose estimator are up to date
+        updateOdometryData();
 
+
+        // Look ahead in time one control loop and adjust
         
-        m_states = m_kinematics.toSwerveModuleStates(m_chassisSpeeds);
-        SwerveDriveKinematics.desaturateWheelSpeeds(m_states, MAX_VELOCITY_METERS_PER_SECOND);
-        SmartDashboard.putString("Speeds", m_chassisSpeeds.toString());
+        // 4738's implementation. With fudge factor to account for latency
+        ChassisSpeeds discretizedChassisSpeeds = DiscretizeChassisSpeeds(m_chassisSpeeds, RobotContainer.updateDt, 4);
+        // WPILib's implementation
+        //ChassisSpeeds discretizedChassisSpeeds = ChassisSpeeds.discretize(m_chassisSpeeds, updateDt);
 
-        
-        // m_frontLeftModule.set(m_states[0].speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND * MAX_VOLTAGE,
-        //         m_states[0].angle.getRadians());
-        // m_frontRightModule.set(m_states[1].speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND * MAX_VOLTAGE,
-        //         m_states[1].angle.getRadians());
-        // m_backLeftModule.set(m_states[2].speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND * MAX_VOLTAGE,
-        //         m_states[2].angle.getRadians());
-        // m_backRightModule.set(m_states[3].speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND * MAX_VOLTAGE,
-        //         m_states[3].angle.getRadians());
 
+        // Deadband robot relative speeds
+        if (Math.abs(discretizedChassisSpeeds.vxMetersPerSecond) < (DRIVE_DEADBAND_PERCENT * MAX_VELOCITY_METERS_PER_SECOND)) {
+            discretizedChassisSpeeds.vxMetersPerSecond = 0;
+        }
+        if (Math.abs(discretizedChassisSpeeds.vyMetersPerSecond) < (DRIVE_DEADBAND_PERCENT * MAX_VELOCITY_METERS_PER_SECOND)) {
+            discretizedChassisSpeeds.vyMetersPerSecond = 0;
+        }
+        if (Math.abs(discretizedChassisSpeeds.omegaRadiansPerSecond) < (DRIVE_DEADBAND_PERCENT * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND)) {
+            discretizedChassisSpeeds.omegaRadiansPerSecond = 0;
+        }
+
+
+        SwerveModuleState[] targetStates = m_kinematics.toSwerveModuleStates(discretizedChassisSpeeds);
+        SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, MAX_VELOCITY_METERS_PER_SECOND);
+        SmartDashboard.putString("Unprocessed Speeds", m_chassisSpeeds.toString());
+        SmartDashboard.putString("Processed Speeds", discretizedChassisSpeeds.toString());
+
+        // Prepared debugging for closed loop drive motor
+        SmartDashboard.putString("FrontRightPos", m_swerveModules[1].getDriveMotor().getPosition().getValue().toString());
+        //SmartDashboard.putString("FrontLeftDriveError", String.valueOf(m_swerveModules[0].getDriveMotor().getClosedLoopError().getValue()));
+        // SmartDashboard.putString("FrontLeftDriveTarget", String.valueOf(m_swerveModules[0].getDriveMotor().getClosedLoopReference().getValue()));
+        // SmartDashboard.putString("FrontLeftDriveCurrent", String.valueOf(m_swerveModules[0].getDriveMotor().getVelocity().getValue()));
+        // SmartDashboard.putString("FrontLeftTargetState", m_swerveModules[0].getTargetState().toString());
+        // SmartDashboard.putString("DrivePosSignalLatency", String.valueOf(m_swerveModules[0].getDriveMotor().getPosition().getTimestamp().getLatency())
+        //     + " Non comp value: " + m_swerveModules[0].getDriveMotor().getPosition().getValueAsDouble());
+        // SmartDashboard.putString("SteerPosSignalLatency", String.valueOf(m_swerveModules[0].getSteerMotor().getPosition().getTimestamp().getLatency()));
+        // SmartDashboard.putString("YawLatency", String.valueOf(RobotContainer.gyro.getYawLatency()));
 
         // TODO: OpenLoopVoltage seems to match SDS library best, but is open loop
         // For auto consistency we should aim for closed loop control
@@ -369,17 +437,38 @@ public class Drivetrain extends SubsystemBase {
 
 
         // Steer request type defaults correctly to MotionMagic
-        m_frontLeftModule.apply(m_states[0], driveRequestType); 
-        m_frontRightModule.apply(m_states[1], driveRequestType);
-        m_backLeftModule.apply(m_states[2], driveRequestType);
-        m_backRightModule.apply(m_states[3], driveRequestType);
-
-
-        
+        for (int i = 0; i < m_swerveModules.length; i++){
+            m_swerveModules[i].apply(targetStates[i], driveRequestType); 
+        }     
     }
 
-    // -------------------- Kinematics and Swerve Module Status Public Access
-    // Methods --------------------
+    public static ChassisSpeeds DiscretizeChassisSpeeds(ChassisSpeeds speeds, double dt, double rotationCompFactor){ 
+        var futureRobotPose = new Pose2d(
+            speeds.vxMetersPerSecond * dt, 
+            speeds.vyMetersPerSecond * dt, 
+            new Rotation2d(speeds.omegaRadiansPerSecond * dt * rotationCompFactor) // No I do not know why it's negative
+        );
+        var twist = Utils.log(futureRobotPose);
+        // FLIPPED COORDINATE SYSTEM??
+        return new ChassisSpeeds((twist.dx / dt), (twist.dy / dt), (speeds.omegaRadiansPerSecond));
+    }
+
+    public void updateOdometryData(){
+        // Refresh odometry data
+        BaseStatusSignal.refreshAll(m_allSignals);
+
+        // Update / fill swerve related data
+        for (int i = 0; i < m_swerveModules.length; i++){
+            m_positions[i] = m_swerveModules[i].getPosition(false);
+            m_states[i] = m_swerveModules[i].getCurrentState();
+            m_targetStates[i] = m_swerveModules[i].getTargetState();
+        }
+
+        // Update pose estimator with odometry data
+        RobotContainer.odometry.updateOdometry();
+    }
+
+    // -------------------- Kinematics and Swerve Module Status Public Access Methods --------------------
 
     /** Returns kinematics of drive system */
     public SwerveDriveKinematics getKinematics() {
@@ -388,38 +477,27 @@ public class Drivetrain extends SubsystemBase {
 
     /**
      * Returns speed and angle status of all swerve modules
-     * Returns array of length of of SwerveModuleStates
+     * @return array of length of number of swerve modules
      */
     public SwerveModuleState[] getSwerveStates() {
-
-        // create array of module states to return
-        SwerveModuleState[] states = new SwerveModuleState[4];
-        
-        states[0] = m_frontLeftModule.getCurrentState();
-
-        states[1] = m_frontRightModule.getCurrentState();
-
-        states[2] = m_backLeftModule.getCurrentState();
-
-        states[3] = m_backRightModule.getCurrentState();
-
-        return states;
+        return m_states;
     }
 
-    /* Exists because a bunch of updated functions take SwerveModulePositions now?? */
+    /**
+     * Returns targeted speed and angle status of all swerve modules
+     * @return array of length of number of swerve modules
+     */
+    public SwerveModuleState[] getTargetSwerveStates() {
+        return m_targetStates;
+    }
+
+    /** 
+     * Returns swerve module positions
+     * @return array of length of number of swerve modules
+     */
     public SwerveModulePosition[] getSwervePositions(){
-        // create array of module positions to return
-        SwerveModulePosition[] positions = new SwerveModulePosition[4];
-
-        positions[0] = m_frontLeftModule.getCachedPosition();
-
-        positions[1] = m_frontRightModule.getCachedPosition();
-
-        positions[2] = m_backLeftModule.getCachedPosition();
-
-        positions[3] = m_backRightModule.getCachedPosition();
-
-        return positions;
+        return m_positions;
     }
 
+    
 } // end class Drivetrain

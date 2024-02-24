@@ -7,12 +7,13 @@ package frc.robot;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.commands.AutoDriveToPose;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.commands.DriveCommand;
 import frc.robot.commands.LEDCommand;
+import frc.robot.commands.autonomous.AutoDriveToPose;
 import frc.robot.subsystems.Drivetrain;
-import frc.robot.subsystems.Gyro;
 import frc.robot.subsystems.LEDBlinkin;
+import frc.robot.subsystems.Pigeon;
 import frc.robot.subsystems.PowerPanel;
 import frc.robot.subsystems.SwerveOdometry;
 
@@ -26,12 +27,15 @@ import frc.robot.subsystems.SwerveOdometry;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
+  /** Update loop rate in Hz */
+  public static final double updateDt = 0.02;
 
   // Create robot's shuffboard operator interface
   public static final ShuffleboardOI shuffleboard = new ShuffleboardOI();
 
   // The robot's subsystems are defined here...
-  public static final Gyro gyro = new Gyro();
+  //public static final Gyro gyro = new Gyro();
+  public static final Pigeon gyro = new Pigeon();
   public static final Drivetrain drivetrain = new Drivetrain();
   public static final SwerveOdometry odometry = new SwerveOdometry();
   public static final PowerPanel panel = new PowerPanel();
@@ -61,11 +65,8 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private static void configureButtonBindings() {
-
-    // example:
-    //OI.shootButton.whileTrue(new AimThenShoot());
-
- }
+    OI.zeroButton.whileTrue(new RunCommand(() -> gyro.resetGyro()));
+  }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
